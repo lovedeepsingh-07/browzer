@@ -1,9 +1,10 @@
-workspace = { members = ["browzer_web"] }
-
 [package]
 name = "browzer"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2021"
 
 [dependencies]
 browzer_web = { path = "browzer_web" }
+
+[workspace]
+members = ["browzer_web"]
