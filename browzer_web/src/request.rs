@@ -1,25 +1,6 @@
-//! This module defines the `Request` struct and functionality related to handling HTTP requests.
-
-// internal crate imports
 use crate::{error, utils};
-
-// standard library imports
 use std::collections::HashMap;
 
-/// Represents an HTTP request.
-///
-/// The `Request` struct contains all the information of an HTTP request, such as the HTTP method,
-/// request path, HTTP version, request headers, and an optional request body.
-///
-/// # Fields
-///
-/// - `method` - The HTTP method of the request (e.g., GET, POST).
-/// - `path` - The path of the request (e.g., "/index.html").
-/// - `version` - The HTTP version used in the request (e.g., "HTTP/1.1").
-/// - `headers` - A `HashMap` containing the request headers as key-value pairs.
-/// - `body` - An optional string containing the body of the request.
-/// - `cookies` - A `HashMap` containing cookies from the request
-// ----- Request struct
 #[derive(Debug)]
 pub struct Request {
     pub method: utils::HttpMethod,
@@ -29,7 +10,6 @@ pub struct Request {
     pub body: Option<String>,
     pub cookies: HashMap<String, utils::Cookie>,
 }
-// default implementation for Request struct
 impl Default for Request {
     fn default() -> Self {
         Request {
@@ -43,25 +23,9 @@ impl Default for Request {
     }
 }
 impl Request {
-    /// Creates a new `Request` instance from a vector of HTTP request strings.
-    ///
-    /// This function parses an HTTP request represented as a vector of strings and converts it into
-    /// a `Request` struct. The vector should contain the request line (method, path, version),
-    /// followed by headers, an empty line, and optionally a body.
-    ///
-    /// # Arguments
-    ///
-    /// - `input` - A reference to a vector of strings representing the HTTP request.
-    ///
-    /// # Returns
-    ///
-    /// - `Result<Request, error::RequestError>` - A result containing the `Request` struct if
-    /// parsing is successful, or a `RequestError` if there is an error in parsing.
-    ///
-    /// # Errors
-    ///
-    /// - `RequestError::InvalidRequestLineError` - If the request line is malformed.
-    /// - `RequestError::EmptyRequestError` - If the request is empty.
+    // This function parses an HTTP request represented as a vector of strings and converts it into
+    // a `Request` struct. The vector should contain the request line (method, path, version),
+    // followed by headers, an empty line, and optionally a body.
     pub fn new(input: &Vec<String>) -> Result<Request, error::RequestError> {
         let method;
         let path;

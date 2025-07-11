@@ -1,56 +1,19 @@
-//! This module defines a thread pool for managing and executing tasks concurrently.
-//!
-//! The `thread_pool` module provides the `ThreadPool` and `Worker` structs, which are used to manage
-//! a pool of worker threads that can execute tasks concurrently. The module leverages Rust's
-//! standard library threading and synchronization primitives.
-
-// external crate imports
 use uuid::Uuid;
-
-// internal crate imports
 use crate::error::*;
-
-// standard library imports
 use std::{
     sync::{mpsc, Arc, Mutex},
     thread::{self},
 };
 
-/// The type of job that a worker can execute.
 type Job = Box<dyn FnOnce() + Send + 'static>;
 
-/// A struct representing a worker in the thread pool.
-/// Each worker has a unique identifier and a thread.
-// ----- Worker struct
 #[derive(Debug)]
 pub struct Worker {
     id: Uuid,
     thread: Option<thread::JoinHandle<()>>,
 }
+
 impl Worker {
-    /// This function creates a thread which runs a loop, listen for incoming jobs throught the `Receiver`, ensure
-    /// the integrity of the job recieved, run the job in the thread, and return the `Worker` object
-    ///
-    /// # Arguments
-    ///
-    /// - `id` - A unique identifier for the worker.
-    /// - `receiver` - A shared receiver for receiving jobs from the thread pool.
-    ///
-    /// # Returns
-    ///
-    /// A `Worker` object.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use uuid::Uuid;
-    /// use std::sync::{Arc, Mutex, mpsc};
-    /// use crate::thread_pool::{Worker, Job};
-    ///
-    /// let (sender, receiver) = mpsc::channel();
-    /// let receiver = Arc::new(Mutex::new(receiver));
-    /// let worker = Worker::new(Uuid::new_v4(), Arc::clone(&receiver));
-    /// ```
     pub fn new(id: Uuid, receiver: Arc<Mutex<mpsc::Receiver<Job>>>) -> Worker {
         let thread = thread::spawn(move || loop {
             let message = receiver
@@ -76,37 +39,13 @@ impl Worker {
     }
 }
 
-/// A struct representing a thread pool for managing worker threads.
-/// The thread pool maintains a set of workers and a channel for sending jobs to them.
-// ----- ThreadPool struct
+// The thread pool maintains a set of workers and a channel for sending jobs to them.
 #[derive(Debug)]
 pub struct ThreadPool {
     workers: Vec<Worker>,
     sender: Option<mpsc::Sender<Job>>,
 }
 impl ThreadPool {
-    /// This function creates a channel for sending and recieving jobs, create a vector for storing workers, and
-    /// new workers accoding the `size` input provided, and return the `ThreadPool` object
-    ///
-    /// # Arguments
-    ///
-    /// - `size` - The number of workers in the thread pool. Must be greater than 0.
-    ///
-    /// # Returns
-    ///
-    /// A `ThreadPool` object.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `size` is 0.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use crate::thread_pool::ThreadPool;
-    ///
-    /// let pool = ThreadPool::new(4);
-    /// ```
     pub fn new(size: usize) -> ThreadPool {
         assert!(size > 0);
 
@@ -125,26 +64,6 @@ impl ThreadPool {
         };
     }
 
-    /// Sends a job to the thread pool for execution.
-    ///
-    /// # Arguments
-    ///
-    /// - `f` - A closure representing the job to be executed.
-    ///
-    /// # Returns
-    ///
-    /// A `Result` which is `Ok` if the job was successfully sent, or an `Err` if there was an error.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use crate::thread_pool::ThreadPool;
-    ///
-    /// let pool = ThreadPool::new(4);
-    /// pool.execute(|| {
-    ///     println!("Job executed");
-    /// }).unwrap();
-    /// ```
     pub fn execute<F>(&self, f: F) -> Result<(), ThreadPoolError>
     where
         F: FnOnce() + Send + 'static,
@@ -159,7 +78,7 @@ impl ThreadPool {
     }
 }
 
-/// The `Drop` implementation for `ThreadPool` to ensure graceful shutdown of worker threads.
+// graceful shutdown
 impl Drop for ThreadPool {
     fn drop(&mut self) {
         drop(self.sender.take());

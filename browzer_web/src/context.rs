@@ -1,34 +1,7 @@
-//! This module defines the `Context` struct, which represents the context of a web request.
-
-// external crate imports
 use serde_urlencoded;
-
-// internal crate imports
 use crate::{request, response, utils};
-
-// standard library imports
 use std::collections::HashMap;
 
-/// Represents the context of a web request.
-///
-/// The `Context` struct contains information about the incoming request such as request details,
-/// response to be sent back, parameters extracted from the request path, and query parameters and
-/// much more.
-///
-/// # Fields
-///
-/// - `request` - The incoming request provided via the `Request` struct.
-/// - `response` - The response to be sent back using the `Response` struct.
-/// - `params` - A `HashMap` representing parameters extracted from the request path.
-/// - `query_params` - A `HashMap` representing query parameters extracted from the request path.
-///
-/// # Examples
-///
-/// ```rust
-/// let mut context = Context::new(Request::new());
-/// let response = context.send_string(HttpStatusCode::OK, "Hello, World!");
-/// ```
-// ----- Context struct
 #[derive(Debug)]
 pub struct Context {
     pub request: request::Request,
@@ -38,22 +11,6 @@ pub struct Context {
 }
 
 impl Context {
-    /// Creates a new `Context` instance with the given request.
-    ///
-    /// # Arguments
-    ///
-    /// - `request` - A `Request` struct representing the incoming request.
-    ///
-    /// # Returns
-    ///
-    /// A new `Context` instance.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// let request = Request::new();
-    /// let context = Context::new(request);
-    /// ```
     pub fn new(request: request::Request) -> Context {
         return Context {
             request,
@@ -63,23 +20,6 @@ impl Context {
         };
     }
 
-    /// Constructs a response with the given status code and body content.
-    ///
-    /// # Arguments
-    ///
-    /// - `status_code` - A `HTTPStatusCode` specifying the status code of the response.
-    /// - `input` - A `String` representing the body content of the response.
-    ///
-    /// # Returns
-    ///
-    /// A `Response` with the specified status code and body content.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// let mut context = Context::new(Request::new());
-    /// let response = context.send_string(HttpStatusCode::OK, "Hello, World!");
-    /// ```
     pub fn send_string(
         &mut self,
         status_code: utils::HttpStatusCode,
@@ -91,23 +31,6 @@ impl Context {
         res.clone()
     }
 
-    /// Constructs a redirect response with the given status code and target route.
-    ///
-    /// # Arguments
-    ///
-    /// - `status_code` - A `HTTPStatusCode` specifying the status code of the response.
-    /// - `route` - A `String` specifying the target route to redirect to.
-    ///
-    /// # Returns
-    ///
-    /// A `Response` with the specified status code and target route to redirect the user.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// let mut context = Context::new(Request::new());
-    /// let response = context.redirect(HttpStatusCode::SeeOther, "/home");
-    /// ```
     pub fn redirect(
         &mut self,
         status_code: utils::HttpStatusCode,
@@ -120,20 +43,6 @@ impl Context {
         res.clone()
     }
 
-    /// This method allows the user to read the form data from the request
-    ///
-    /// # Arguments
-    /// - `key` - A `String` representing the key of the form value that you want to read
-    ///
-    /// # Returns
-    /// - A `String` containing the form value of the key provided
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// let mut context = Context::new(Request::new());
-    /// let form_value = context.form_value("form_value_key");
-    /// ```
     pub fn form_value(&mut self, key: &str) -> String {
         match self.request.headers.get("Content-Type") {
             Some(content_type) => content_type,

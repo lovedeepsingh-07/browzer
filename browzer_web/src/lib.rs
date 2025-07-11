@@ -1,38 +1,3 @@
-//! # browzer_web
-//!
-//! `browzer_web` is a very simple framework for building web applications and backends.
-//!
-//! ## Examples
-//!
-//! ```rust
-//! use browzer_web;
-//!
-//! fn main() {
-//!     let mut server = browzer_web::WebServer::new(format!("0.0.0.0:{}", PORT), 5);
-//!     server.get("/", |mut c| {
-//!         return c.send_string(browzer_web::utils::HttpStatusCode::OK, "Hello, World!");
-//!     });
-//!     server.listen();
-//! }
-//! ```
-//!
-//! ## Modules
-//!
-//! - `context` - route context which helps to easily work with router handlers
-//! - `error` - custom errors
-//! - `request` - handle HTTP requests related functionality
-//! - `response` - handle HTTP response related functionality
-//! - `router` - deals with routing and other aspects of routing like middlewares, registered routes
-//! - `utils` - utilities used by the framework
-
-pub mod context;
-pub mod error;
-pub mod request;
-pub mod response;
-pub mod router;
-pub mod utils;
-
-// standard library imports
 use std::{
     fs,
     io::{BufRead, BufReader, Read, Write},
@@ -41,29 +6,14 @@ use std::{
     sync::Arc,
 };
 
-/// Represents a web server.
-///
-/// The `WebServer` struct is responsible for creating the main server which binds all the
-/// functionality of the web framework like routing, response generation, listening to
-/// requests, etc together efficiently and properly.
-///
-/// # Fields
-///
-/// - `listener` - A `TcpListener` that listens for incoming requests streams.
-/// - `request_pool`- A custom `ThreadPool` implementation which handles request distribution to various worker threads
-/// - `hide_banner` - A boolean flag to control whether the server banner should be displayed(logged to the console) or not
-/// - `address` - The address to which the WebServer binds the TcpListener
-/// - `router` - An `Arc` wrapped `WebRouter` which is responsible for routing logic of the server
-///
-/// # Examples
-///
-/// ```rust
-/// use browzer_web::WebServer;
-///
-/// let server = WebServer::new("127.0.0.1:8080".to_string(), 4);
-/// server.listen();
-/// ```
-// ----- WebServer struct
+pub mod context;
+pub mod error;
+pub mod request;
+pub mod response;
+pub mod router;
+pub mod utils;
+
+
 #[derive(Debug)]
 pub struct WebServer {
     pub listener: TcpListener,
@@ -74,35 +24,6 @@ pub struct WebServer {
 }
 
 impl WebServer {
-    /// Creates a new `WebServer` instance.
-    ///
-    /// Create a `TcpListener`, bind it to the address provided, create a `ThreadPool` with
-    /// user-defined number of workers which handles distribution of requests to worker threads and
-    /// return the `WebServer` object.
-    ///
-    /// # Arguments
-    ///
-    /// - `address` - A `String` representing the address on which the server will listen for
-    /// incoming requests.
-    /// - `workers` - A `usize` specifying the  number of worker threads that will be created in
-    /// the thread pool, to which the incoming requets will be distributed.
-    ///
-    /// # Returns
-    ///
-    /// - `WebServer` - A new instance of `WebServer`.
-    ///
-    /// # Panics
-    ///
-    /// This function will panic if it fails to bind the `TcpListener` to the provided address.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use browzer_web::WebServer;
-    ///
-    /// let server = WebServer::new("127.0.0.1:8080".to_string(), 4);
-    /// server.listen();
-    /// ```
     pub fn new(address: String, workers: usize) -> WebServer {
         let listener = match TcpListener::bind(&address) {
             Ok(listener) => listener,
@@ -126,36 +47,9 @@ impl WebServer {
         };
     }
 
-    /// Register a new middleware
-    ///
-    /// This method allows you to register a new middleware function in the ruoter's middleware
-    /// vector, which applies all your registered middlewares to incoming requests one-by-one in
-    /// exact order in which you defined those middleware functions
-    ///
-    /// # Arguments
-    ///
-    /// - `middleware_func` - A closure function containing the functionality of the middleware
-    /// defined by the user
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// let mut server = WebServer::new("127.0.0.1:8080".to_string(), 4);
-    ///
-    /// server.middleware(|mut ctx| {
-    ///     // some functionality
-    ///     return ctx
-    /// });
-    /// ```
-    ///
-    /// # Errors
-    ///
-    /// If the router is not initialized, this method will print an error message using `eprintln!`.
-    ///
-    /// # Panics
-    ///
-    /// This function will not panic under normal conditions. However, if the router is not properly
-    /// initialized, it will log an error.
+    // This method allows you to register a new middleware function in the ruoter's middleware
+    // vector, which applies all your registered middlewares to incoming requests one-by-one in
+    // exact order in which you defined those middleware functions
     pub fn middleware<F>(&mut self, middleware_func: F)
     where
         F: Fn(context::Context) -> context::Context + 'static + Send + Sync,
@@ -171,37 +65,6 @@ impl WebServer {
         };
     }
 
-    /// Registers a new route for handling HTTP GET requests.
-    ///
-    /// This method allows you to define a route and associate it with a handler function that
-    /// will be called when a GET request is made to the specified path. The handler function
-    /// should accept a `Context` object and return a `Response` object.
-    ///
-    /// # Arguments
-    ///
-    /// - `path` - A string slice that holds the path for the route. This is the URL path that will be
-    ///   matched against incoming GET requests.
-    /// - `handler` - A closure or function that takes a `Context` as input and returns a `Response`.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// let mut server = WebServer::new("127.0.0.1:8080".to_string(), 4);
-    ///
-    /// server.get("/hello", |mut ctx| {
-    ///     return ctx.send_string(browzer_web::utils::HttpStatusCode::OK, "Hello, World!");
-    /// });
-    /// ```
-    ///
-    /// # Errors
-    ///
-    /// If the router is not initialized, this method will print an error message using `eprintln!`.
-    ///
-    /// # Panics
-    ///
-    /// This function will not panic under normal conditions. However, if the router is not properly
-    /// initialized, it will log an error.
-    // ----- GET request
     pub fn get<F>(&mut self, path: &str, handler: F)
     where
         F: Fn(context::Context) -> response::Response + 'static + Send + Sync,
@@ -223,38 +86,6 @@ impl WebServer {
             ),
         };
     }
-    /// Registers a new route for handling HTTP POST requests.
-    ///
-    /// This method allows you to define a route and associate it with a handler function that
-    /// will be called when a POST request is made to the specified path. The handler function
-    /// should accept a `Context` object and return a `Response` object.
-    ///
-    /// # Arguments
-    ///
-    /// - `path` - A string slice that holds the path for the route. This is the URL path that will be
-    ///   matched against incoming POST requests.
-    /// - `handler` - A closure or function that takes a `Context` as input and returns a `Response`.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// let mut server = WebServer::new("127.0.0.1:8080".to_string(), 4);
-    ///
-    /// server.post("/submit", |mut ctx| {
-    ///     return ctx.send_string(browzer_web::utils::HttpStatusCode::OK, "Resource submitted!");
-    /// });
-    /// ```
-    ///
-    /// # Errors
-    ///
-    /// If the router is not initialized or it it fails to register the route using `WebRouter`,
-    /// this method will print an error message using `eprintln!`.
-    ///
-    /// # Panics
-    ///
-    /// This function will not panic under normal conditions. However, if the router is not properly
-    /// initialized, it will log an error.
-    // ----- POST request
     pub fn post<F>(&mut self, path: &str, handler: F)
     where
         F: Fn(context::Context) -> response::Response + 'static + Send + Sync,
@@ -276,38 +107,6 @@ impl WebServer {
             ),
         };
     }
-    /// Registers a new route for handling HTTP PATCH requests.
-    ///
-    /// This method allows you to define a route and associate it with a handler function that
-    /// will be called when a PATCH request is made to the specified path. The handler function
-    /// should accept a `Context` object and return a `Response` object.
-    ///
-    /// # Arguments
-    ///
-    /// - `path` - A string slice that holds the path for the route. This is the URL path that will be
-    ///   matched against incoming PATCH requests.
-    /// - `handler` - A closure or function that takes a `Context` as input and returns a `Response`.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// let mut server = WebServer::new("127.0.0.1:8080".to_string(), 4);
-    ///
-    /// server.patch("/update", |mut ctx| {
-    ///     return ctx.send_string(browzer_web::utils::HttpStatusCode::OK, "Resource patched!");
-    /// });
-    /// ```
-    ///
-    /// # Errors
-    ///
-    /// If the router is not initialized or it it fails to register the route using `WebRouter`,
-    /// this method will print an error message using `eprintln!`.
-    ///
-    /// # Panics
-    ///
-    /// This function will not panic under normal conditions. However, if the router is not properly
-    /// initialized, it will log an error.
-    // ----- PATCH request
     pub fn patch<F>(&mut self, path: &str, handler: F)
     where
         F: Fn(context::Context) -> response::Response + 'static + Send + Sync,
@@ -333,38 +132,6 @@ impl WebServer {
             ),
         };
     }
-    /// Registers a new route for handling HTTP DELETE requests.
-    ///
-    /// This method allows you to define a route and associate it with a handler function that
-    /// will be called when a DELETE request is made to the specified path. The handler function
-    /// should accept a `Context` object and return a `Response` object.
-    ///
-    /// # Arguments
-    ///
-    /// - `path` - A string slice that holds the path for the route. This is the URL path that will be
-    ///   matched against incoming DELETE requests.
-    /// - `handler` - A closure or function that takes a `Context` as input and returns a `Response`.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// let mut server = WebServer::new("127.0.0.1:8080".to_string(), 4);
-    ///
-    /// server.delete("/remove", |mut ctx|{
-    ///     return ctx.send_string(browzer_web::utils::HttpStatusCode::OK, "Resource deleted!");
-    /// });
-    /// ```
-    ///
-    /// # Errors
-    ///
-    /// If the router is not initialized or it it fails to register the route using `WebRouter`,
-    /// this method will print an error message using `eprintln!`.
-    ///
-    /// # Panics
-    ///
-    /// This function will not panic under normal conditions. However, if the router is not properly
-    /// initialized, it will log an error.
-    // ----- DELETE request
     pub fn delete<F>(&mut self, path: &str, handler: F)
     where
         F: Fn(context::Context) -> response::Response + 'static + Send + Sync,
@@ -391,28 +158,11 @@ impl WebServer {
         };
     }
 
-    /// This method serves and maps static files from directory path to a route path
-    ///
-    /// This method does it's function by registering a dynamic GET method route to the
-    /// `route_path`, that route's handler function gets the filename of the file that is requested
-    /// from the dynamic route params and then check if a file with that name exists under the
-    /// `dir_path`, if it does then the handler will return a `String` response with that file's
-    /// content as body, it not then it returns a `NotFound`
-    ///
-    /// # Arguments
-    ///
-    /// - `dir_path` - A string representing the directory on the machine which the user wants to
-    /// by served on the web app.
-    /// - `route_path` - A string representing the path to which the user wants to map the
-    /// static file directory
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// let mut server = WebServer::new("127.0.0.1:8080".to_string(), 4);
-    ///
-    /// server.serve_static("static","/static/get")
-    /// ```
+    // This method does it's function by registering a dynamic GET method route to the
+    // `route_path`, that route's handler function gets the filename of the file that is requested
+    // from the dynamic route params and then check if a file with that name exists under the
+    // `dir_path`, if it does then the handler will return a `String` response with that file's
+    // content as body, it not then it returns a `NotFound`
     pub fn serve_static(&mut self, dir_path: &str, route_path: &str) {
         let dir_path = Arc::new(dir_path.to_string());
         let dir_path_clone = Arc::clone(&dir_path);
@@ -457,26 +207,10 @@ impl WebServer {
         });
     }
 
-    /// Listens for incoming TCP connections and execute various functionality on those connections.
-    ///
-    /// This method starts the web server, accepting incoming connections and distributing
-    /// them to worker threads for handling. It uses the `request_pool` to manage a pool of
-    /// worker threads and assigns incoming requests to these workers. The function will
-    /// continue to listen for connections indefinitely.
-    ///
-    /// # Panics
-    ///
-    /// This function will not panic under normal conditions. However, it will print error
-    /// messages to the standard error output if it encounters issues with establishing connections
-    /// or assigning worker threads.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// let mut server = WebServer::new("127.0.0.1:8080".to_string(), 4);
-    /// server.listen();
-    /// ```
-    ///
+    // This method starts the web server, accepting incoming connections and distributing
+    // them to worker threads for handling. It uses the `request_pool` to manage a pool of
+    // worker threads and assigns incoming requests to these workers. The function will
+    // continue to listen for connections indefinitely.
     pub fn listen(&self) {
         // print the server banner( a simple log message ) accoding to the `address` field boolean variable
         if !self.hide_banner {
@@ -511,7 +245,6 @@ impl WebServer {
         }
     }
 
-    // handles various operations related to incoming requests.
     fn handle_request(
         router: Arc<router::WebRouter>,
         mut stream: TcpStream,

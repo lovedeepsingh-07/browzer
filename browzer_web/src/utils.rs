@@ -1,34 +1,11 @@
-//! This module contains various utilities used by the `browzer_web` like `HttpMethod` etc
+use std::time;
+use crate::error;
 
 pub mod thread_pool;
 
-use std::time;
-
-// internal crate imports
-use crate::error;
-
-/// Formats the route or request path string by slashes
-///
-/// If there is a route defined as `/menu/items/`, a person would probably not want to add the
-/// slash at the end everytime they are visiting this path, so this function removes the slashes at
-/// the end from such paths making it easier and simpler for both the end user and developer
-///
-/// # Arguments
-/// - `path` - A `String` representing the path to be formatted
-///
-/// # Returns
-/// - `Result<String, WebRouterError>` - A result containing a `String` representing the formatted
-/// path if it was successfully formatted or a `WebRouterError` if there is an error in formatting
-/// the path.
-///
-/// # Examples
-///
-/// ```rust
-/// assert_eq!(format_path_by_slashes("/menu/items/".to_string()), Ok("/menu/items".to_string()));
-/// assert_eq!(format_path_by_slashes("/users/get_user".to_string()), Ok("/users/get_user".to_string()));
-/// assert_eq!(format_path_by_slashes("/users/axew/?pass=\"some_pass\"".to_string()), Ok("/users/axew?pass=\"some_pass\"".to_string()));
-/// assert_eq!(format_path_by_slashes("/".to_string()), Ok("/".to_string()));
-/// ```
+// If there is a route defined as `/menu/items/`, a person would probably not want to add the
+// slash at the end everytime they are visiting this path, so this function removes the slashes at
+// the end from such paths making it easier and simpler for both the end user and developer
 pub fn format_path_by_slashes(mut path: String) -> Result<String, error::WebRouterError> {
     if path.trim().len() == 0 && path.trim() == "" {
         path = "/".to_string();
@@ -49,7 +26,6 @@ pub fn format_path_by_slashes(mut path: String) -> Result<String, error::WebRout
     return Ok(path);
 }
 
-/// Enumeration of supported HTTP methods.
 #[derive(Debug)]
 pub enum HttpMethod {
     GET,
@@ -58,20 +34,6 @@ pub enum HttpMethod {
     DELETE,
 }
 impl HttpMethod {
-    /// Converts an `HttpMethod` enum value to its corresponding method string.
-    ///
-    /// # Returns
-    ///
-    /// A `String` representing the HTTP method.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use browzer_web::utils::HttpMethod;
-    ///
-    /// let method = HttpMethod::GET;
-    /// assert_eq!(method.to_string(), "GET".to_string());
-    /// ```
     pub fn to_string(&self) -> String {
         match self {
             HttpMethod::GET => "GET",
@@ -83,7 +45,6 @@ impl HttpMethod {
     }
 }
 
-/// Enumeration of supported HTTP status codes.
 #[derive(Debug, Clone)]
 pub enum HttpStatusCode {
     OK,
@@ -105,20 +66,6 @@ pub enum HttpStatusCode {
     ServiceUnavailable,
 }
 impl HttpStatusCode {
-    /// Converts an `HttpStatusCode` enum value to a tuple containing its corresponding reason phrase and status code.
-    ///
-    /// # Returns
-    ///
-    /// A tuple containing a `&str` representing the reason phrase and a `u16` representing the status code.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use browzer_web::utils::HttpStatusCode;
-    ///
-    /// let status = HttpStatusCode::OK;
-    /// assert_eq!(status.code(), ("OK", 200));
-    /// ```
     pub fn code(&self) -> (&str, u16) {
         match self {
             HttpStatusCode::OK => ("OK", 200),
@@ -142,18 +89,6 @@ impl HttpStatusCode {
     }
 }
 
-/// This struct represents an HTTP cookie as sent in the `Set-Cookie` header of an HTTP response or the
-/// `Cookie` header of an HTTP request.
-///
-/// # Examples
-///
-/// ```rust
-/// let cookie = Cookie::new("auth-token","itisanauthtoken");
-/// assert_eq!(cookie.name, "auth-token".to_string());
-/// assert_eq!(cookie.value, "itisanauthtoken".to_string());
-/// assert_eq!(cookie.http_only, false); // default value
-/// assert_eq!(cookie.path, "/".to_string()); // default value
-/// ```
 #[derive(Debug, Clone)]
 pub struct Cookie {
     pub name: String,
@@ -168,21 +103,6 @@ pub struct Cookie {
     pub raw: Option<String>,
 }
 impl Cookie {
-    /// Creates a new `Cookie` instance with given name-value input
-    ///
-    /// # Arguments
-    ///
-    /// - `name` - A string literal representing the name of the cookie
-    /// - `value`- A string literal representing the value of the cookie
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// let cookie = Cookie::new("session", "abc123");
-    /// assert_eq!(cookie.name, "session".to_string());
-    /// assert_eq!(cookie.value, "abc123".to_string());
-    /// assert_eq!(cookie.http_only, false); // default value
-    /// ```
     pub fn new(name: &str, value: &str) -> Self {
         return Cookie {
             name: name.to_string(),

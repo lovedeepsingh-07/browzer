@@ -1,19 +1,6 @@
-//! This module provides the routing functionality for the web framework. It defines the `WebRouter` struct, allowing user to handle routing in a web application.
-
-// internal crate imports
 use crate::{context, error, request, response, utils};
-// standard library imports
 use std::{collections::HashMap, fmt};
 
-/// Manages the routing logic for the web framework.
-///
-/// The `WebRouter` struct holds the registered routes and matches incoming requests to the appropriate route handler.
-///
-/// # Fields
-///
-/// - `routes` - A `HashMap` mapping route paths to another `HashMap` of HTTP methods and their corresponding `RouteHandlerFunction`.
-/// - `middlewares` - A `Vector` representing a list of all the registered middlewares
-// ----- WebRouter struct
 pub struct WebRouter {
     // HashMap< --path-- ,HashMap< --method-- , RouteHandlerFunction>>
     pub routes: HashMap<
@@ -36,21 +23,6 @@ impl fmt::Debug for WebRouter {
 }
 
 impl WebRouter {
-    /// Creates a new `WebRouter` with an empty route map.
-    ///
-    /// # Returns
-    ///
-    /// - `WebRouter` - A new instance of `WebRouter`.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use browzer_web::router::WebRouter;
-    ///
-    /// let router = WebRouter::new();
-    ///
-    /// assert!(router.routes.is_empty());
-    /// ```
     pub fn new() -> WebRouter {
         return WebRouter {
             routes: HashMap::new(),
@@ -58,18 +30,6 @@ impl WebRouter {
         };
     }
 
-    /// Adds a new route to the `routes` hashmap using route path, method and route handler as input
-    ///
-    /// # Arguments
-    ///
-    /// - `path` - The route path as a `String`.
-    /// - `method` - The HTTP method for the route as an `HttpMethod`.
-    /// - `handler` - The `RouteHandlerFunction` representing closure function for the route.
-    ///
-    /// # Returns
-    ///
-    /// - `Result<(), WebRouterError>` - A Result containing a `WebRouterError` if there is
-    /// any error while formatting the path using `format_path_by_slashes` utility function
     pub fn add<F>(
         &mut self,
         mut path: String,
@@ -92,11 +52,6 @@ impl WebRouter {
         return Ok(());
     }
 
-    /// Appends a new middleware to the `middlewares` vector
-    ///
-    /// # Arguments
-    ///
-    /// - `middleware_func` - A closure function representing the middleware handler
     pub fn add_middleware<F>(&mut self, middleware_func: F)
     where
         F: Fn(context::Context) -> context::Context + 'static + Send + Sync,
@@ -104,25 +59,13 @@ impl WebRouter {
         self.middlewares.push(Box::new(middleware_func));
     }
 
-    /// Handles an incoming request, apply middlewares and generates a response.
-    ///
-    /// This function works in two parts:
-    /// 1. It applies all the middlewares from the `middlewares` vector
-    /// 2. handle response generation from request by first getting all the user-registered routes
-    /// which match the request's path(it will be hashmap) from `routes` hashmap, then using that
-    /// hashmap to get the route which matches request's method and then finaly using that route's
-    /// handler function to generate the response for the request by providing a new `Context` with
-    /// the request as input to the handler function
-    ///
-    /// # Arguments
-    ///
-    /// - `request` - The incoming `Request`.
-    ///
-    /// # Returns
-    ///
-    /// - `Result<Response, WebRouterError>` - A result containing the `Respnose` struct if
-    /// response is successfully generated, or a `WebRouterError` if there is an error in generating
-    /// the response.
+    // This function works in two parts:
+    // 1. It applies all the middlewares from the `middlewares` vector
+    // 2. handle response generation from request by first getting all the user-registered routes
+    // which match the request's path(it will be hashmap) from `routes` hashmap, then using that
+    // hashmap to get the route which matches request's method and then finaly using that route's
+    // handler function to generate the response for the request by providing a new `Context` with
+    // the request as input to the handler function
     pub fn handle_request(
         &self,
         mut request: request::Request,
@@ -212,38 +155,16 @@ impl WebRouter {
             }
         }
     }
-    /// Matches a request path to a registered dynamic route path, extracting parameters if available.
-    ///
-    /// This function first removes the query parameters from the request path string, then
-    /// splits both the request path and route path into vectors by splitting at `/` (slashes).
-    /// It ensures the lengths of these vectors are the same. If they are, it zips the vectors
-    /// into one vector with the format `(request_path_part, route_path_part)`.
-    ///
-    /// It then loops over this vector and checks if the `route_path_part` of any item starts with `:`.
-    /// If it does, this registered route is identified as a dynamic route, so the corresponding
-    /// `request_path_part` is stored in the `params` `HashMap` which is then returned after the loop ends.
-    /// If the `route_path_part` does not start with `:`, it is treated as a normal route and both parts
-    /// must be equal. If they aren't, the function returns `None`.
-    ///
-    /// # Arguments
-    ///
-    /// - `request_path` - A `String` representing the path of the incoming request.
-    /// - `route_path` - A `String` representing a registered route path pattern.
-    ///
-    /// # Returns
-    ///
-    /// An `Option<HashMap<String, String>>` containing the extracted parameters if the request path
-    /// matches the registered route path pattern, or `None` if it does not match.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// let request_path = "/users/123".to_string();
-    /// let route_path = "/users/:id".to_string();
-    /// let params = WebRouter::match_dynamic_route(request_path, route_path).unwrap();
-    ///
-    /// assert_eq!(params.get("id"), Some(&"123".to_string()));
-    /// ```
+    // This function first removes the query parameters from the request path string, then
+    // splits both the request path and route path into vectors by splitting at `/` (slashes).
+    // It ensures the lengths of these vectors are the same. If they are, it zips the vectors
+    // into one vector with the format `(request_path_part, route_path_part)`.
+    //
+    // It then loops over this vector and checks if the `route_path_part` of any item starts with `:`.
+    // If it does, this registered route is identified as a dynamic route, so the corresponding
+    // `request_path_part` is stored in the `params` `HashMap` which is then returned after the loop ends.
+    // If the `route_path_part` does not start with `:`, it is treated as a normal route and both parts
+    // must be equal. If they aren't, the function returns `None`.
     fn match_dynamic_route(
         request_path: String,
         route_path: String,
